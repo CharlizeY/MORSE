@@ -31,7 +31,6 @@ mergesort <- function(x){
 }
 
 
-
 #question2
 #majority element problem
  majority <- function(a){
