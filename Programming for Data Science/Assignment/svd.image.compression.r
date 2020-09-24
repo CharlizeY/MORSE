@@ -1,0 +1,73 @@
+# helper function to view an image
+  viewImage <- function(x) {
+  plot(1:2,axes=FALSE,xlab="",ylab="",type='n')
+  rasterImage(x,xleft=1,ybottom=1,xright=2,ytop=2)
+  }
+
+  image.compression <- function() {
+  # choose a picture
+  pic <- as.integer(readline(prompt="Choose a picture (1-5) from Gauss, Cox, von Neumann, Nightingale or checkerboard: "))
+  res <- image.compress.param(pic)
+  
+  # plot side-by-side the original image and the singular values
+  par(mfrow=c(1,2))
+  viewImage(res$mtx)
+  plot(res$svd$d)
+  abline(h=0,lty=2)
+  
+  # until you choose to quit...
+  k <- Inf
+  while (TRUE) {
+    # choose the rank of the approximation according to f
+    k <- as.integer(readline(prompt=paste("choose a number of k between 1 and ",res$p," (anything else to exit): ",sep="")))
+    compressedImage <- compute.compression(k, res$p, res$mtx, res$svd)
+
+    # view the original and compressed image side-by-side
+    if (!is.null(compressedImage)) {
+      viewImage(res$mtx)
+      viewImage(compressedImage)
+    } else {
+      break;
+    }
+  }
+}
+
+image.compress.param <- function(pic) {
+  img <- images[[pic]] 
+  
+  # find the size of the image
+  dims <- dim(img); m <- dims[1]; n <- dims[2]
+  
+  if (length(dims) > 2) {
+    # convert the image into greyscale
+    mtx <- matrix(0,m,n)
+    for (i in 1:m) {
+      for (j in 1:n) {
+        mtx[i,j] <- sum(img[i,j,])/3
+      }
+    }
+  } else {
+    mtx <- img
+  }
+  
+  p <- min(m,n)
+  
+  # perform the decomposition
+  decomposition <- svd(mtx)
+  
+  return(list(img=img, mtx=mtx, p=p, svd=decomposition))
+}
+
+compute.compression <- function(k, p, mtx, decomposition) {
+  if (1 <= k && k <= p) {
+    
+    # compute the k-rank approximation
+    approximation <- decomposition$u[,1:k]%*%diag(decomposition$d[1:k])%*%t(decomposition$v[,1:k])  
+    
+    approximation.error <- function(k,mtx,approximation) exp(norm(mtx-approximation,type="F"))+k*(m+n+1)
+    min.error<-optimise(approximation.error,c(1,p))
+    k<-min.error$minimum
+    print(paste("approximation.error = ",approximation.error,sep=""))
+    print(paste("min.error = ",min.error,sep=""))
+  }
+}
