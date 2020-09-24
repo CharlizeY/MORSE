@@ -1,2 +1,2 @@
 # MORSE-Coursework
-Codes for MORSE coursework, topics include Linear Statistical Modelling, Machine Learning algorithms and Time Series Forecasting.
+Codes for MORSE coursework, covers a variaty of Machine Learning algorithms from Linear models to Time Series Forcasting.
