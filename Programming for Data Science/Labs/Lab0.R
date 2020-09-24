@@ -99,7 +99,6 @@ print(Diff)
 
 ## Problem 7: 10001st prime
 #find the 10001st prime number
-
 n <- 10001
 prime.seq <- numeric(n)
 prime.seq[1:2] <- c(2, 3)
