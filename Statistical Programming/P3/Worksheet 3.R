@@ -23,6 +23,8 @@ system.time(save(GTEX_subset, file = tempfile()))
 system.time(data.table::fwrite(GTEX_subset, file = tempfile()))
 # data.table::fwrite is faster than save
 
+
+# Q3
 sprays <- read.table("sprays.txt", header = TRUE)
 head(sprays)
 str(sprays)
