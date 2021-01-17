@@ -1,0 +1,123 @@
+---
+title: "ST340 Lab 2: SVD & PCA"
+date: "2019--20"
+output: pdf_document
+---
+# 1: A simple singular value decomposition
+
+(a) Generate a realization of a $4 \times 5$ Gaussian random matrix $G$.
+```{r}
+G<-matrix(rnorm(4*5,mean=0,sd=1), 4, 5) 
+U<-svd(G)$u
+d<-svd(G)$d
+V<-svd(G)$v
+Sigma<-diag(d,4,4)
+all.equal(G,U%*%Sigma%*%t(V))
+plot(d)
+sigma<-diag(d[1:2],2,2)
+G2<-U[,1:2]%*%sigma%*%t(V[,1:2])
+norm(G-G2,type="F")
+sqrt(d[3]^2+d[4]^2)
+
+```
+
+(b) Look at `?svd`.
+(c) Set $U$, $d$, and $V$ by using `svd`.
+(d) Check that `G` is equal to `U%*%Sigma%*%t(V)` (to machine precision).
+(e) Plot the singular values.
+(f) Compute $G_2$, the 2-rank approximation of $G$, and also compute $||G-G_2||_F$.
+(g) Does the value agree with the theory? Yes.
+
+# 2: Image compression via the singular value decomposition
+
+```{r}
+
+load("pictures.rdata")
+source("svd.image.compression.R")
+
+image.compression()
+res <- image.compress.param(1) 
+par(mfrow=c(1,2)) 
+viewImage(res$mtx) 
+plot(res$svd$d) 
+abline(h=0,lty=2) 
+```
+
+Take a look at `svd.image.compression.R` and understand what the code is doing. Then run `image.compression()` here to see how well we can compress our images.
+
+# 3: PCA: Crabs
+
+(a) Load the MASS library to access the crabs data.
+    ```{r}
+library(MASS)
+```
+(b) Read `?crabs`.
+(c) Read in the FL, RW, CL, CW, and BD measurements.
+    ```{r,eval=FALSE}
+Crabs <- crabs[,4:8]
+Crabs.class <- factor(paste(crabs[,1],crabs[,2],sep=""))
+plot(Crabs,col=Crabs.class,pch=20)
+```
+(d) Read `?prcomp` and use it to obtain the principal components of a centred and scaled version of `Crabs`. Call the output of `prcomp` ``Crabs.pca`'.
+```{r}
+Crabs.pca<-prcomp(Crabs,center=TRUE,scale.=TRUE)
+```
+
+(e) If you `plot(Crabs.pca)` it visualizes the variances associated with the components.
+    ```{r,eval=FALSE}
+plot(Crabs.pca)
+```
+(f) Plot PC2 against PC1.
+```{r}
+plot(Crabs.pca$x[,1:2],col=Crabs.class,pch=20)
+```
+(g) Read `?pairs` and use it to find a pair of components with good separation of the classes.
+```{r}
+pairs(Crabs.pca$x[,1:5],col=Crabs.class,pch=20)
+plot(Crabs.pca$x[,2:3],col=Crabs.class,pch=20)
+```
+(h) Read `?scale`. Check that you can obtain the principal components (P=XV) by using the singular value decomposition on a centred and scaled version of `Crabs`.
+Hint: look at SVD for scaled X and PCA for XTX, they have the same V value 
+(scaled X for obtaining V as an orthonormal basis)
+```{r}
+scalecrabs<-scale(Crabs)
+V<-svd(scalecrabs)$v
+print(Crabs.pca$rotation-V)
+
+Crabs.pcs <- scalecrabs%*%V
+print(norm(Crabs.pcs - Crabs.pca$x))
+```
+
+# 4: PCA: Viruses
+
+This is a dataset on 61 viruses with rod-shaped particles affecting various crops (tobacco, tomato, cucumber and others) described by Fauquet *et al.* (1988) and analysed by Eslava-G$\'o$mez (1989). There are 18 measurements on each virus, the number of amino acid residues per molecule of coat protein.
+```{r}
+load("viruses.rdata")
+```
+
+(a) Obtain the principal components of a centred and scaled version of allviruses.
+    ```{r}
+X<-scale(allviruses)
+viruses.pca<-prcomp(X)
+
+groups <- rep(0,61)
+groups[1:3] <- 1
+groups[4:9] <- 2
+groups[10:48] <- 3
+groups[49:61] <- 4
+group.names <- c("Hordeviruses","Tobraviruses","Tobamoviruses","furoviruses")
+
+plot(viruses.pca)
+pairs(viruses.pca$x[,1:5],col=groups,pch=20)
+```
+If you colour by groups (i.e. `col=groups` in plot) then black is horde, red is tobra, green is tobamo, blue is furo.
+
+(b) Do the principal components show some separation between the viruses?
+(c) The largest group of viruses is the tobamoviruses. Does a principal component analysis suggest there might be subgroups within this group of viruses? (do PCA on toba!Yes, there might be 3 subgroups)
+```{r}
+Y<-scale(tobamoviruses)
+toba.pca<-prcomp(Y)
+plot(toba.pca)
+pairs(toba.pca$x[,1:5],pch=20)
+plot(toba.pca$x[,1:2],pch=20)
+```

@@ -1,0 +1,121 @@
+---
+title: "ST340 Lab 6: Validation and the curse of dimensionality"
+date: "2019--20"
+output: pdf_document
+---
+# Validation
+
+The dataset `SmokeCancer.csv` shows lung cancer rates by U.S. state in 2010, with a number of covariates such as Federal Year 2010 cigarette sales per 100,000.
+
+(a) Read the data file on lung cancer and create a data frame with variables of interest.
+```{r}
+X = read.table("SmokeCancer.csv", header=TRUE,sep=",",row.names=1)
+LungCancer = data.frame(CigSalesRate=100000*X[,"FY2010Sales"]/X[,"Pop2010"],
+                        X[,c("CigYouthRate","CigAdultRate","LungCancerRate")])
+```
+
+(b) Fit a linear model for LungCancerRate (`?lm` for a reminder about `lm`):
+```{r eval=FALSE}
+summary(lm(LungCancerRate~CigSalesRate+CigYouthRate+CigAdultRate,data=LungCancer))
+```
+
+(c) Write a function that takes a formula and does LOOCV (leave one out cross validation) with respect to the squared error of the linear model for the given formula. Use it to find a good linear model for `LungCancerRate` in terms of `CigSalesRate`, `CigYouthRate` and `CigAdultRate`. You could also try using transformations of the covariates by adding terms such as `I(CigSalesRate^2)` and `I(CigSalesRate*CigAdultRate)` to your formulae. 
+
+    (By good, we mean that it is the optimal, in terms of cross-validation error, linear model using some or all of these covariates.)
+    
+```{r}
+loocv<-function(formula) {
+s=0
+# loop through number of rows in dataframe
+for (i in 1:dim(LungCancer)[1]) {
+l=lm(formula,LungCancer[-i,])
+s=s+(predict(l,LungCancer[i,])-LungCancer$LungCancerRate[i])^2
+}
+s/dim(LungCancer)[1]
+}
+loocv("LungCancerRate~CigSalesRate+CigYouthRate+CigAdultRate")
+```
+
+(d) The Akaike Information criterion (AIC) and Bayesian Information criterion (BIC) are analytic approximations to the validation step. They are (different) ways of quantifying the trade-off between model complexity (in terms of, e.g. the number of parameters) and the fit to the training data (in terms of likelihood), defined as follows:
+
+* Akaike Information criterion (AIC) = $(2 \times \#\text{parameters} - 2 \times \log(\text{likelihood}))$, and 
+* Bayesian information criterion (BIC) = $(\log(\text{amount of data}) \times \#\text{parameters} - 2 \times \log(\text{likelihood}))$.
+
+    Write a function that takes a formula and then calculates AIC and BIC. Use your function to find a *good* linear model for `LungCancerRate`, as in (b).
+```{r}
+aic<-function(formula) {
+AIC(lm(formula,data=LungCancer))
+# #Equivalent to
+# l=lm(formula,data=LungCancer)
+# p=length(l$coefficients)+1
+# logLik(l)
+# 2*p-2*logLik(l) # or: use univariate normal dist. to approximate the density of li, i for each data point
+# 2*p-2*sum(log(dnorm(l$residuals,sd=summary(l)$sigma)))
+}
+bic<-function(formula) {
+BIC(lm(formula,data=LungCancer))
+}
+aic("LungCancerRate~CigSalesRate+CigAdultRate ")
+```
+
+# The curse of dimensionality
+
+Suppose $N$ points are chosen uniformly at random in the $D$-dimensional hypercube $[0,1]^D$. Consider a smaller hypercube $H = [0,r]^D$ in the "corner" of $[0,1]^D$.
+
+(a) How big does $r$ have to be for there to be approximately one of the $N$ points lying in $H$?
+
+(b) How big does $r$ have to be for there to be approximately 10 of the $N$ points lying in $H$?
+
+(c) How big does $r$ have to be for there to be approximately $\frac{N}{2}$ of the $N$ points lying in $H$?
+
+Check each of your answers by simulation.
+```{r}
+a1 = vector(); a2 = vector(); a3 = vector()
+N = 10000
+for (D in 1:10) {
+# define p as a matrix of values uniformly generated on (0,1), each row for a data point
+p = matrix(runif(N*D),nrow = N, ncol = D)
+# r1 is calculated s.t. the volumn of H is 1/n; r2,r3 similarly
+# Note that ri increases significantly (towards 1) with D
+r1 = (1/N)^(1/D)
+r2 = (10/N)^(1/D)
+r3 = (1/2)^(1/D)
+# ai is a vector consists of the number of points in H, run through each value of D in 1:10
+# rowSums returns the value of entries in a row that is smaller than ri
+#ai[D] returns the number of data points lie in H, for that value of D
+a1[D] = sum(rowSums(p < r1) == D) # Should average 1
+a2[D] = sum(rowSums(p < r2) == D) # Should average 10
+a3[D] = sum(rowSums(p < r3) == D) # Should average N/2
+}
+a1
+a2
+a3
+mean(a1)
+mean(a2)
+mean(a3)
+```
+# Distance functions
+
+(a) Write a function to calculate the $\ell_1$ distances between pairs of row vectors in two matrices:
+```{r eval=FALSE}
+# note that p,q are row vectors
+distances.l1 <- function(X,W) {
+apply(W,1,function(p) apply(X,1,function(q) sum(abs(p-q))))
+}
+```
+
+(b) Write a similar function to calculate a matrix of pairwise $\ell_2$ distances:
+```{r eval=FALSE}
+distances.l2 <- function(X,W) {
+  apply(W,1,function(p) apply(X,1,function(q) sqrt(sum((p-q)^2))))
+}
+```
+
+(c) Write a similar function to calculate the Mahalanobis distance between the row vectors, given a $D \times D$ covariance matrix $S$:
+```{r eval=FALSE}
+# the concept of Maha distance is in k-nearest neighbours slides p13
+distances.maha <- function(X,W,S) {
+S.inv=solve(S)
+apply(W,1,function(p) apply(X,1,function(q) sqrt( (p-q) %*% S.inv %*% (p-q) )))
+}
+```
