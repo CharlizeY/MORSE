@@ -1,2 +1,2 @@
 # Coursework
-Codes for Warwick MORSE and Oxford Statistical Science coursework, mainly in R & Stata.
+R & Stata Codes for Warwick MORSE and Oxford Statistical Science coursework.
