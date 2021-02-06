@@ -1,0 +1,202 @@
+---
+title: "ST340 Assignment 3"
+author: ' u1727406   Charlize Yang '
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Q1 Gradient descent
+#### (a)
+The function for gradient ascent is:
+```{r}
+gradient.descent <- function(f, gradf, x0, iterations=1000, eta=0.2) {
+  x<-x0
+  for (i in 1:iterations) {
+    #cat(i,"/",iterations,": ",x," ",f(x),"\n")
+    x<-x-eta*gradf(x)
+  }
+  x
+}
+
+# define the function gradient.ascent, replace eta with -eta
+gradient.ascent <- function(f, df, x0, iterations=1000, eta=0.2) {  
+gradient.descent(f,df,x0, iterations, eta=-eta)
+} 
+
+# use gradient.ascent to find the maximimum of f(x)=(1+x^2)^(-1)
+f <-function(x) { (1+x^2)^(-1) }
+gradf<-function(x) { -2*x*(1+x^2)^(-2) }  
+gradient.ascent(f,gradf,3,40,0.5)
+```
+```{r}
+# to verify that it is indeed the maximum, I plot the function
+# it's easy to see that x=0 gives the maximum point of f(0)=1
+plot(f, xlim=c(-10,10))  
+```
+
+<br><br>
+
+
+#### (b)(i)
+To find the stationary points of f, set the partial derivatives to zero:
+\[
+\frac{\partial f}{\partial x_{2}}=-200(x_{1}^2-x_{2})=0 \iff x_{1}^2-x_{2}=0
+\]
+Substitute $x_{1}^2-x_{2}=0$ into $\frac{\partial f}{\partial x_{1}}$:
+\[
+\frac{\partial f}{\partial x_{1}}=2(x_{1}-1)+400x_{1}(x_{1}^2-x_{2})=2(x_{1}-1)=0 \iff x_{1}=1
+\]
+And when $x_{1}=1, x_{2}=x_{1}^2=1$
+So the unique stationary point is (1,1).
+<br>
+And this point is clearly a minimum as f is non-negative (as a sum of squares) and f(1,1)=0.
+
+<br><br>
+
+
+#### (b)(ii)
+```{r}
+f <- function(x) (x[1]-1)^2 + 100*(x[1]^2-x[2])^2
+# as calculated in (b)(i), gradf is the vector of two partial derivatives
+gradf <- function(x) c(2*(x[1]-1) + 400*(x[1])*(x[1]^2-x[2]),-200*(x[1]^2-x[2]))
+```
+  
+<br><br>
+
+
+#### (b)(iii)
+```{r,eval=FALSE}
+# plot the funtion in 3D
+g <- function(x,y){return((x-1)^2 + 100*(x^2-y)^2)}
+x <- y <- seq(-5, 5, length=50)
+z <- outer(x, y, g)
+z[is.na(z)] <- 1
+persp(x, y, z)
+```
+
+```{r,eval=FALSE}
+#look at the gradient of the function, e.g. at c(3,4), to gain some insights about the potential eta to choose
+gradf(c(3,4))
+```
+As we can see in the graph, the function is very steep, i.e. the gradient changes very rapidly as approaching the minimum point. Also, the gradient at x0=c(3,4) is very large. So the ideal approach is to take small values of eta which requires a large number of steps, otherwise it would jump and take too long to converge.
+<br><br>
+
+```{r,eval=FALSE}
+gradient.descent <- function(f, gradf, x0, iterations=1000, eta=0.2) {
+  x<-x0
+  for (i in 1:iterations) {
+    #cat(i,"/",iterations,": ",x," ",f(x),"\n")
+    x<-x-eta*gradf(x)
+  }
+  # return the value of converged x and the minimum value of f
+  return(c(x,f(x)))
+}
+# after many times of trail and error, choose iterations=3000 and eta=4.9925981e-4
+gradient.descent(f,gradf,c(3,4),3000,4.9925981e-4)
+# indeed, the function converges to x=(1,1) with the minimum value of f (very close to) 0
+```
+<br><br>
+
+
+#### (c)
+```{r}
+# define the gradient.descent.momentum function in the hope to have faster convergence
+gradient.descent.momentum <- function(f, gradf, x0, iterations, eta, alpha) {
+  x<-matrix(0,nrow=length(x0),ncol=iterations)
+  x[,1]<-x0
+  x[,2]<-x[,1]-eta*gradf(x[,1])
+  for (i in 2:(iterations-1)) {
+    # add the momentum term
+    x[,i+1]<-x[,i]-eta*gradf(x[,i])+alpha*(x[,i]-x[,i-1])
+  }
+  return(c(x[,iterations],f(x[,iterations])))
+}
+
+# choose iterations=3000 and eta=4.9925981e-4 (same as in (b)(iii)), alpha=5e-10
+gradient.descent.momentum(f,gradf,c(3,4),3000,4.9925981e-4,5e-10)
+```
+Comment: Under the same number of iterations and same value of eta, the computed minimum value of f is closer to 0 when I use GD with momentum, which suggest that adding the momentum term has speed up the convergence process (but not that much in this case) compared with the general GD.
+
+<br><br>
+
+
+
+# Q2 Support vector machines
+#### (a)
+```{r,eval=FALSE}
+load("mnist.tiny.RData")
+train.X=train.X/255
+test.X=test.X/255
+
+library(grid)
+grid.raster(array(aperm(array(train.X[1:50,],c(5,10,28,28)),c(4,1,3,2)),c(140,280)),interpolate=FALSE)
+```
+<br><br>
+
+```{r,eval=FALSE,warning=FALSE}
+library(e1071) 
+svm(train.X,train.labels,type="C-classification",kernel="linear",cross=3)$tot.accuracy 
+svm(train.X,train.labels,type="C-classification",kernel="poly",degree=2,coef=1,cross=3)$tot.accuracy
+svm(train.X,train.labels,type="C-classification",kernel="radial",gamma=0.01,cross=3)$tot.accuracy
+```
+Comparison: SVM with RBF (with gamma=0.01) gives the highest accuracy/smallest classification error in this case, followed by the linear kernal which gives a higher accuracy than the quadratic kernal (with p=2,c=1).
+<br>
+(Note that we have used the default cost here for all three kernals.)
+
+The suppresed warning message returns all the variables in train.X that have zero values, and in SVM it is clear that you cannot scale a bunch of zeros.
+<br><br>
+
+
+#### (b)
+```{r,eval=FALSE,warning=FALSE}
+# here choose 10 values of cost in (1,20) after some trail-and-error
+log.C.range <- as.matrix(seq(0,3,0.3))
+# here choose 10 values of gamma in (0.001,0.05) after some trail-and-error
+log.gamma.range <- as.matrix(seq(-7,-3,0.4))
+
+library(knitr) 
+radial.svm.grid.search <- function(log.C.range, log.gamma.range, d,y) {
+accuracy.grid <- matrix(nrow=length(log.C.range),ncol = length(log.gamma.range), dimnames=list(log.C.range,log.gamma.range))
+for (lc in 1:length(log.C.range)) {
+for (lg in 1:length(log.gamma.range)) {
+  # here used 3-fold cross validation
+s <- svm(d,y,type="C-classification",kernel="radial",gamma=exp(log.gamma.range[lg]),cost=exp(log.C.range[lc]),cross=3)
+accuracy.grid[lc,lg] <- s$tot.accuracy
+ }
+}
+return(accuracy.grid)
+}
+
+accuracy.grid <- radial.svm.grid.search(log.C.range,log.gamma.range,d=train.X,y=train.labels)
+kable(accuracy.grid,format = 'markdown')
+
+# Another method is to use the apply function:
+#radial.accuracy.grid <- function(log.C.range,log.gamma.range,d,y){
+#apply(log.C.range,1,function(lc) apply(log.gamma.range,1,function(lg) svm(d,y,type="C-classification",kernel="radial",gamma=exp(lg),cost=exp(lc),cross=3)$tot.accuracy))
+}
+#radial.accuracy.grid(log.C.range,log.gamma.range,d=train.X,y=train.labels)
+```
+<br><br>
+
+```{r,eval=FALSE,warning=FALSE}
+# return the optimal cost and gamma:
+radial.index <- which(accuracy.grid == max(accuracy.grid), arr.ind = TRUE)
+radial.parameters <- c(log.C.range[radial.index[1]],log.gamma.range[radial.index[2]])
+print(radial.parameters)
+# return the optimal values of cost, gamma and the training accuracy
+print(c(exp(radial.parameters),max(accuracy.grid)))
+```
+<br><br>
+
+```{r,eval=FALSE,warning=FALSE}
+# with the optimal parameters, train on the full tiny's training set and test on the tiny's test set
+s.rbf <- svm(train.X,train.labels,type="C-classification",kernel="radial",cost=exp(radial.parameters[1]),gamma=exp(radial.parameters[2]))
+mean(predict(s.rbf,test.X)==test.labels)
+```
+Comment: the optimal parameter values found are cost=1.350 and gamma=0.0334, with the training accuracy 91.7%. This model (with the best cross-validation error) is also doing well on the test data, with the test accuracy of 91.5%, which is very close to the training accuracy.
