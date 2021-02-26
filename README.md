@@ -1,2 +1,2 @@
 # Coursework
-R & Stata codes for Warwick MORSE and Oxford Statistical Science coursework.
+Code (R, Python, Stata) for Warwick MORSE and Oxford Statistical Science coursework.
