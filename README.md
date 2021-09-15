@@ -1,1 +1,1 @@
-MORSE + Stats Science
+Coursework for MORSE + Stats Science
