@@ -1,2 +1,2 @@
-# homework
+# Coursework
 MORSE + Stats Science
