@@ -1,1 +1,1 @@
-Coursework for MORSE + Stats Science
+Warwick MORSE
