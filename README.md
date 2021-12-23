@@ -1,1 +1,1 @@
-Programming projects for BSc MORSE at University of Warwick.
+Programming courseworks for BSc MORSE at University of Warwick.
