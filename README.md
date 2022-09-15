@@ -1,1 +1,1 @@
-Coding exercises for BSc MORSE at University of Warwick.
+Coding courseworks ane exercises for Mathematics, Operational Research, Statistics, Economics at University of Warwick.
