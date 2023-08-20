@@ -1,2 +1,2 @@
-Coding coursework for MORSE (Mathematics, Operational Research, Statistics, Economics), including Time Series predictions coded in STATA and machine learning algorithms implemented in R.
+Coding coursework for Time Series predictions (STATA) and machine learning algorithms (R), from BSc MORSE.
 
